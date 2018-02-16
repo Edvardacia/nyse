@@ -1,0 +1,42 @@
+benchmark.NYSEtradingForAssets <- function(
+    stocks, deals = NULL, rellocations = '%Y',
+    benchmark = "SPY",
+    balance = 10000,
+    years1 = NULL, years2 = NULL,
+    allocation = c(SPY = 0.15, QQQ = 0.15, TLT = 0.4, IEF = 0.1, XLP = 0.2)) {
+
+    # Чистим данные
+    stocksNames <- names(stocks)
+    stocks <- lapply(stocks, function(asset) {
+        asset <- asset[complete.cases(asset), ]
+        asset <- asset[, c("Date", "Open", "High", "Low", "Close" )]
+        asset$Date <- datetime.convertSecToPOSIX(asset$Date)
+        return(asset)
+    })
+
+    stockDate <- names(which.max(sapply(stocks, function(asset) min(asset$Date))))
+    stocks <- lapply(stocks, function(asset)
+        asset[asset$Date >= min(stocks[[stockDate]]$Date),])
+
+    if (is.null(deals))
+        deals <- benchmark.NYSEtradingRebalancing(
+            stocks, period = rellocations, balance, allocation)
+
+    df <- cbind(do.call("cbind", stocks), deals)
+    df$balance <- NA
+
+    for(i in seq(1, nrow(df), by = 1)) {
+        df[[i, "balance"]] <- sum(sapply(
+            stocksNames, function(x) df[[i, paste0("deals.", x)]] * df[[i, paste0(x, ".Close")]]))
+    }
+
+    # Считаю бенчмарк
+    benchmark = stocks[[benchmark]]$Close * round(balance / stocks[[benchmark]]$Close[1])
+    return(
+        data.frame(
+            date = stocks[[1]]$Date,
+            balance = df$balance,
+            benchmark = benchmark
+        )
+    )
+}
