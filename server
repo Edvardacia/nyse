@@ -1,0 +1,264 @@
+#
+# This is the server logic of a Shiny web application. You can run the
+# application by clicking 'Run App' above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+library(shiny)
+library(quantmod)
+source("D:/SystemAnalysis/Benchmark/source/benchmarksNYSEtrading.R")
+
+
+
+shinyServer(function(input, output) {
+
+  SPYdata <- reactive({
+    getSymbols("SPY", src = "google", from = input$dates[1], to = input$dates[2], auto.assign = FALSE) })
+
+  TLTdata <- reactive({
+    getSymbols("TLT", src = "google", from = input$dates[1], to = input$dates[2], auto.assign = FALSE) })
+
+  QQQdata <- reactive({
+    getSymbols("QQQ", src = "google", from = input$dates[1], to = input$dates[2], auto.assign = FALSE) })
+
+  XLPdata <- reactive({
+    getSymbols("XLP", src = "google", from = input$dates[1], to = input$dates[2], auto.assign = FALSE) })
+
+  IEFdata <- reactive({
+    getSymbols("IEF", src = "google", from = input$dates[1], to = input$dates[2], auto.assign = FALSE) })
+
+
+  SPYTLTreactive <- reactive({
+    SPYTLT <- benchmark.NYSEtrading(SPYdata(), TLTdata(), as.numeric(input$capital), input$targetVol, input$assallo, input$rollVol, input$daysInYear, input$coeffVol, modelVol = input$volatile)
+    return(SPYTLT)
+    })
+  SPYTLTReportreactive <- reactive({
+    SPYTLTReport <- benchmark.NYSEtrading.report(SPYTLTreactive())
+    return(SPYTLTReport)
+    })
+
+  SPYTLTQQQreactive <- reactive({
+    SPYTLTQQQ <- benchmark.NYSEtradingThreeAssets(SPYdata(), TLTdata(), QQQdata(), as.numeric(input$capital), input$targetVol, input$assallo, input$rollVol, input$daysInYear, input$coeffVol, modelVol = input$volatile)
+    return(SPYTLTQQQ)
+  })
+  SPYTLTQQQReportreactive <- reactive({
+    SPYTLTQQQReport <- benchmark.NYSEtrading.report(SPYTLTQQQreactive())
+    return(SPYTLTQQQReport)
+  })
+
+  SPYTLTQQQXLPreactive <- reactive({
+    SPYTLTQQQXLP <- benchmark.NYSEtradingFourAssets(SPYdata(), TLTdata(), QQQdata(), XLPdata(), as.numeric(input$capital), input$targetVol, input$assallo, input$rollVol, input$daysInYear, input$coeffVol, modelVol = input$volatile)
+    return(SPYTLTQQQXLP)
+  })
+  SPYTLTQQQXLPReportreactive <- reactive({
+    SPYTLTQQQXLPReport <- benchmark.NYSEtrading.report(SPYTLTQQQXLPreactive())
+    return(SPYTLTQQQXLPReport)
+  })
+
+  SPYTLTQQQXLPIEFreactive <- reactive({
+    SPYTLTQQQXLPIEF <- benchmark.NYSEtradingFiveAssets(SPYdata(), TLTdata(), QQQdata(), XLPdata(), IEFdata(), as.numeric(input$capital), input$targetVol, input$assallo, input$rollVol, input$daysInYear, input$coeffVol, modelVol = input$volatile)
+    return(SPYTLTQQQXLPIEF)
+  })
+  SPYTLTQQQXLPIEFReportreactive <- reactive({
+    SPYTLTQQQXLPIEFReport <- benchmark.NYSEtrading.report(SPYTLTQQQXLPIEFreactive())
+    return(SPYTLTQQQXLPIEFReport)
+  })
+
+  lastPosition <- reactive({
+    positions <- benchmark.NYSEtradingLastPositions(SPYTLTreactive(), SPYTLTQQQreactive(), SPYTLTQQQXLPreactive(), SPYTLTQQQXLPIEFreactive() )
+    return(positions)
+  })
+
+  output$lastpositions <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+      lastPosition()$benchmark1lastGraph
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        lastPosition()$benchmark2lastGraph
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          lastPosition()$benchmark3lastGraph
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            lastPosition()$benchmark4lastGraph
+          }
+        }}}
+  })
+
+
+  output$capitals <- renderPlotly({
+
+  if(identical(input$portfolio, "SPYTLT")) {
+    #plot_ly(SPYTLTreactive(), x = SPYTLTreactive()$date, y = SPYTLTreactive()$caps, name = 'BenchMarks Cap', type = 'scatter', mode = 'lines+markers')
+    SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+    SPYTLTGraphs$caps
+  } else {
+    if(identical(input$portfolio, "SPYTLTQQQ")) {
+    SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+    SPYTLTQQQGraphs$caps
+    } else {
+    if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+    SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+    SPYTLTQQQXLPGraphs$caps
+    } else {
+    if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+    SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+    SPYTLTQQQXLPIEFGraphs$caps
+    }
+  }}}
+})
+
+  output$retsLog <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+      #plot_ly(SPYTLTreactive(), x = SPYTLTreactive()$date, y = SPYTLTreactive()$retsLog, name = 'BenchMarks Cap', type = 'scatter', mode = 'lines+markers')
+      SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+      SPYTLTGraphs$retsLog
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+        SPYTLTQQQGraphs$retsLog
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+          SPYTLTQQQXLPGraphs$retsLog
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+            SPYTLTQQQXLPIEFGraphs$retsLog
+          }
+        }}}
+  })
+
+  output$cumRet <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+        SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+        SPYTLTGraphs$cumRet
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+        SPYTLTQQQGraphs$cumRet
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+          SPYTLTQQQXLPGraphs$cumRet
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+            SPYTLTQQQXLPIEFGraphs$cumRet
+          }
+        }}}
+  })
+
+  output$deals <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+      SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+      SPYTLTGraphs$amDeals
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+        SPYTLTQQQGraphs$amDeals
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+          SPYTLTQQQXLPGraphs$amDeals
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+            SPYTLTQQQXLPIEFGraphs$amDeals
+          }
+        }}}
+  })
+
+  output$costs <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+      SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+      SPYTLTGraphs$costs
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+        SPYTLTQQQGraphs$costs
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+          SPYTLTQQQXLPGraphs$costs
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+            SPYTLTQQQXLPIEFGraphs$costs
+          }
+        }}}
+  })
+
+  output$drawDown <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+      SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+      SPYTLTGraphs$drawDown
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+        SPYTLTQQQGraphs$drawDown
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+          SPYTLTQQQXLPGraphs$drawDown
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+            SPYTLTQQQXLPIEFGraphs$drawDown
+          }
+        }}}
+  })
+
+
+  output$loads <- renderPlotly({
+
+    if(identical(input$portfolio, "SPYTLT")) {
+      SPYTLTGraphs <- benchmark.NYSEtrading.graphics(SPYTLTreactive(), SPYTLTReportreactive())
+      SPYTLTGraphs$loads
+    } else {
+      if(identical(input$portfolio, "SPYTLTQQQ")) {
+        SPYTLTQQQGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQreactive(), SPYTLTQQQReportreactive())
+        SPYTLTQQQGraphs$loads
+      } else {
+        if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+          SPYTLTQQQXLPGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPreactive(), SPYTLTQQQXLPReportreactive())
+          SPYTLTQQQXLPGraphs$loads
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+            SPYTLTQQQXLPIEFGraphs <- benchmark.NYSEtrading.graphics(SPYTLTQQQXLPIEFreactive(), SPYTLTQQQXLPIEFReportreactive())
+            SPYTLTQQQXLPIEFGraphs$loads
+          }
+        }}}
+  })
+
+
+
+  output$returns <- renderDataTable({
+
+        if(identical(input$portfolio, "SPYTLT")) {
+          SPYTLTReportreactive()$years
+        } else {
+          if(identical(input$portfolio, "SPYTLTQQQ")) {
+            SPYTLTQQQReportreactive()$years
+          } else {
+            if(identical(input$portfolio, "SPYTLTQQQXLP")) {
+              SPYTLTQQQXLPReportreactive()$years
+            } else {
+              if(identical(input$portfolio, "SPYTLTQQQXLPIEF")) {
+                SPYTLTQQQXLPIEFReportreactive()$years
+              }
+            }}}
+  })
+
+
+
+})
