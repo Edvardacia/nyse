@@ -1,0 +1,37 @@
+library(plotly)
+library(quantmod)
+library(TTR)
+library(compare)
+
+
+
+#SPY <- read.csv(file = "D:\\SystemAnalysis\\data\\SPY.csv", header = TRUE, sep = ",")
+#TLT <- read.csv(file = "D:\\SystemAnalysis\\data\\TLT.csv", header = TRUE, sep = ",")
+#QQQ <- read.csv(file = "D:\\SystemAnalysis\\data\\QQQ.csv", header = TRUE, sep = ",")
+#XLP <- read.csv(file = "D:\\SystemAnalysis\\data\\XLP.csv", header = TRUE, sep = ",")
+#IEF <- read.csv(file = "D:\\SystemAnalysis\\data\\IEF.csv", header = TRUE, sep = ",")
+#VIX <- read.csv(file = "D:\\SystemAnalysis\\data\\VXX.csv", header = TRUE, sep = ",")
+
+
+
+source("D:/SystemAnalysis/Benchmark/source/benchmarksNYSEtrading.R")
+
+portfolio <- c("SPYTLT", "SPYTLTQQQ", "SPYTLTQQQXLP", "SPYTLTQQQXLPIEF")
+volatile <- c("close", "garman.klass", "parkinson", "rogers.satchell", "gk.yz", "yang.zhang")
+
+
+
+#SPY <-  getSymbols("SPY", src = "google",auto.assign = FALSE)
+
+#TLTdata <- reactive({
+#  getSymbols("TLT", src = "google",
+#             from = 2011-01-01,
+#             to = 2016-01-01,
+#             auto.assign = FALSE)
+#})
+
+#getSymbols("TLT", src = "google",
+#           from = "2011-01-01",
+#           to = "2016-01-01",
+#           auto.assign = FALSE)
+
