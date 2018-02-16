@@ -1,0 +1,62 @@
+benchmark.NYSEtradingRebalancing <- function(
+    stocks, period = '%Y', balance, allocation) {
+
+    stocksNames <- names(stocks)
+    # Забираю цены закрытия
+    asClose <- as.data.frame(sapply(stocks, function(asset) asset$Close))
+    n <- nrow(asClose)
+
+    # Создаю пустой data frame для сделок
+    deals <- as.data.frame(matrix(data = NA, ncol=ncol(asClose), nrow=nrow(asClose)))
+    colnames(deals) <- c(paste0("deals.", colnames(asClose)))
+
+    # Создаю data frame с информацией об аллокации.
+    # В будущем когда аллокация будет меняться на вход будет просто
+    # приниматься data frame
+    alloc <- as.data.frame(matrix(data = NA, ncol=ncol(asClose), nrow=nrow(asClose)))
+    colnames(alloc) <- names(allocation)
+    # Пробегаюсь по аллокации и заполняю data frame
+    alloc <- sapply(names(allocation), function(asset)
+        alloc[[paste0("allo.", asset)]] <- rep(allocation[[asset]], n))
+    colnames(alloc) <- c(paste0("allo.", names(allocation)))
+    # Объединяю всё в один data.frame
+    res <- cbind(asClose, deals, alloc)
+    # Задаю баланс, включая начальный
+    res$balance <- NA
+    res$balance[[1]] <- balance
+    # Задаю период ребалансировки
+    res$period <- format(stocks[[1]]$Date, period)
+
+    # Превращаю этот data frame в data frame по конкретным периодам
+    asClosePeriod <- split(res, res$period)
+    res2 <- t(sapply(asClosePeriod, function(period) period[nrow(period), ]))
+    # Забираю первое наблюдение как точку отсчета
+    res3 <- asClosePeriod[[1]][1, ]
+    # Делаю мерж
+    res5 <- rbind(res3, res2)
+    # Рассчитываю сделку для первого периода
+    for(x in stocksNames) {
+        res5[[1, paste0("deals.", x)]] <- round(res5[[1, "balance"]] *
+                                                    res5[[1, paste0("allo.", x)]] / res5[[1, x]])
+    }
+    # Рассчитываю сделку для последующих периодов
+    for(i in seq(2, nrow(res5), by = 1)) {
+        # Сначала считаю баланс на конец периода
+        res5[[i, "balance"]] <- sum(sapply(
+            stocksNames, function(x) res5[[i-1, paste0("deals.", x)]] * res5[[i, x]]))
+        # Теперь перерасчитываю сделки
+        for(x in stocksNames) {
+            res5[[i, paste0("deals.", x)]] <-
+                round(res5[[i, "balance"]] * res5[[i, paste0("allo.", x)]] / res5[[i, x]])
+        }
+    }
+    # Выясняю размер периода
+    size <- sapply(asClosePeriod, function(period) nrow(period))
+
+    # Пробегаюсь по периоду
+    for(x in stocksNames) {
+        asset <- unlist(res5[[paste0("deals.", x)]])
+        deals[[paste0("deals.", x)]] <- rep(asset[1:(length(asset) - 1)], times = size)
+    }
+    return(deals)
+}
