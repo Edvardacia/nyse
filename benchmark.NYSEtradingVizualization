@@ -1,0 +1,13 @@
+benchmark.NYSEtradingVizualization <- function(dat) {
+
+    rsGraph <- ggplot(data= dat, aes(x = date, y = benchmark)) +
+        geom_line(colour="#000099")
+    rsGraph <- rsGraph + geom_line(data = dat, aes(x = date, y = balance), colour="#CC0000")
+
+    rsGraph <- rsGraph + theme_bw() +
+        xlab("Date") +
+        ylab("Assets") +
+        ggtitle("Cumulutive returns")
+
+    return(rsGraph)
+}
