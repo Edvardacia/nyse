@@ -1,0 +1,73 @@
+
+
+
+# Define UI for application that draws a histogram
+shinyUI(
+  navbarPage("Quant",
+             tabPanel(h6("Portfolio"),
+                      fluidPage(
+                        fluidRow(
+                          column(2,
+                                 wellPanel(
+
+                                   fluidRow(
+                                     column(12, dateRangeInput("dates", label = h6(strong("Date Period")), start = "2004-01-01", end = as.character(Sys.Date()) ))
+                                   ),
+
+                                   fluidRow(
+                                     column(12, selectInput("portfolio", label = h6(strong("Select portfolio")), choices = portfolio, selected = 1))
+                                   ),
+                                   fluidRow(
+                                     column(12, sliderInput("rollVol", label = h6(strong("Rolling Vol Period")), min = 30, max = 254, value = 127))
+                                   ),
+                                   fluidRow(
+                                     column(12, sliderInput("daysInYear", label = h6(strong("Days In Year")), min = 240, max = 328, value = 254))
+                                   ),
+                                   fluidRow(
+                                     column(12, selectInput("volatile", label = h6(strong("Volatility Model")), choices = volatile, selected = "close"))
+                                   ),
+                                   fluidRow(
+                                     column(12, sliderInput("targetVol", label = h6(strong("Target Volatility")), min = 0.05, max = 0.8, value = 0.2))
+                                   ),
+                                   fluidRow(
+                                     column(12, textInput("capital", label = h6(strong("Capital Size")), value = "30000"))
+                                   ),
+                                   fluidRow(
+                                     column(6, numericInput("coeffVol", label = h6(strong("Volatility Coeff")), value = 1)),
+                                     column(6, numericInput("coeffLev", label = h6(strong("Leverage Coeff")), value = 1))
+                                   ),
+                                   fluidRow(
+                                     column(12, textInput("assallo", label = h6(strong("Asset Allocation")), value = "0.50 0.50"))
+                                   )
+
+                                 )),
+                          column(10,
+                                 fluidRow(
+                                   tabsetPanel(
+                                     tabPanel("Capital", plotlyOutput("capitals", height = "800px", width = "100%")),
+                                     tabPanel("RetsLog", plotlyOutput("retsLog", height = "800px", width = "100%")),
+                                     tabPanel("cumRet", plotlyOutput("cumRet", height = "800px", width = "100%")),
+                                     tabPanel("Loads", plotlyOutput("loads", height = "800px", width = "100%")),
+                                     tabPanel("Deals", plotlyOutput("deals", height = "800px", width = "100%")),
+                                     tabPanel("DrawDown", plotlyOutput("drawDown", height = "800px", width = "100%")),
+                                     tabPanel("Costs", plotlyOutput("costs", height = "800px", width = "100%")),
+                                     tabPanel("Last Positions", plotlyOutput("lastpositions", height = "800px", width = "100%"))
+
+                                 )
+                          ),
+                          fluidRow(
+                            tabPanel("YearsReturn", dataTableOutput("returns"))
+
+                          )
+
+
+
+                        )
+                      )
+             ) )
+  )
+)
+
+
+
+
